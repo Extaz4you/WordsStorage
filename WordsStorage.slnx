@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/WordsStorage.Core/">
+    <Project Path="WordsStorage/WordsStorage.csproj" />
+  </Folder>
+</Solution>
