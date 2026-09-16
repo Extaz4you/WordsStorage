@@ -20,6 +20,9 @@ public class Program
         builder.Services.AddScoped<TopicRepository>();
         builder.Services.AddScoped<WordRepository>();
 
+        builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+        builder.Services.AddProblemDetails();
+
         builder.Host.UseSerilog((context, loggerConfig) =>
         {
             loggerConfig
@@ -31,8 +34,10 @@ public class Program
         });
 
         //builder.WebHost.UseUrls("https://192.168.200.54:7511");
-
         var app = builder.Build();
+
+        app.UseExceptionHandler();
+        app.UseSerilogRequestLogging();
         app.UseSwagger();
         app.UseSwaggerUI();
 

@@ -20,121 +20,77 @@ namespace WordsStorage.Controllers
 
 
         [HttpGet("GetAllWordsFromTopic")]
-        public async Task<ActionResult<List<Word>>> GetWords(int id)
+        public async Task<ActionResult<List<Word>>> GetWords(int id, CancellationToken ct)
         {
-            try
+            var words = await wordRepository.GetWordsFromTopic(id, ct);
+            if (words is null)
             {
-                var words = await wordRepository.GetWordsFromTopic(id);
-                if (words.Any())
-                {
-                    logger.LogInformation("Received {0} words", words.Count);
-                    return Ok(words);
-                }
-                else
-                {
-                    logger.LogInformation("Received {0} words", words.Count);
-                    return NotFound();
-                }
+                logger.LogWarning("Тема {TopicId} не найдена", id);
+                return NotFound();
             }
-            catch
-            {
-                logger.LogError("Something went wrong whe the service tried to get words from the topic with {0} id", id);
-                return BadRequest();
-            }
+
+            logger.LogInformation("Получено {WordsCount} слов из темы {TopicId}", words.Count, id);
+            return Ok(words);
         }
 
         [HttpGet("GetOneWordFromTopic")]
-        public async Task<ActionResult<Word>> GetWord(string word)
+        public async Task<ActionResult<Word>> GetWord(string word, CancellationToken ct)
         {
-            try
+            var result = await wordRepository.GetWordFromTopic(word, ct);
+            if (result != null)
             {
-                var result = await wordRepository.GetWordFromTopic(word);
-                if (result != null)
-                {
-                    logger.LogInformation("Received te word: {0} ", result.RussianVersion.ToUpper());
-                    return Ok(result);
-                }
-                else
-                {
-                    logger.LogInformation("Didn't receive the word: {0}", word.ToUpper());
-                    return NotFound();
-                }
+                logger.LogInformation("Received te word: {Word} ", result.RussianVersion.ToUpper());
+                return Ok(result);
             }
-            catch
+            else
             {
-                logger.LogError("Something went wrong whe the service tried to get word");
-                return BadRequest();
+                logger.LogWarning("Didn't receive the word: {Word}", word.ToUpper());
+                return NotFound();
             }
         }
 
         [HttpPost("AddWordToTopic")]
-        public async Task<ActionResult<bool>> AddWord(Word word)
+        public async Task<ActionResult<bool>> AddWord(Word word, CancellationToken ct)
         {
-            try
+            if (await wordRepository.AddWordToTopic(word, ct))
             {
-                if(await wordRepository.AddWordToTopic(word))
-                {
-                    logger.LogInformation("The word : {0} was added ", word.RussianVersion.ToUpper());
-                    return Ok(true);
-                }
-                else
-                {
-                    logger.LogInformation("The word : {0} wasn't added ", word.RussianVersion.ToUpper());
-                    return BadRequest();
-                }
+                logger.LogInformation("The word : {Word} was added ", word.RussianVersion.ToUpper());
+                return Ok(true);
             }
-            catch
+            else
             {
-                logger.LogError("Something went wrong whe the service tried to add word {0} to topic with id {1}",
-                    word.RussianVersion.ToUpper(), word.TopicId);
-                return BadRequest();
+                logger.LogWarning("The word : {Word} wasn't added ", word.RussianVersion.ToUpper());
+                return Conflict();
             }
         }
 
         [HttpPost("AddWordsToTopic")]
-        public async Task<ActionResult<bool>> AddWords(List<Word> words, int id)
+        public async Task<ActionResult<bool>> AddWords(List<Word> words, int id, CancellationToken ct)
         {
-            try
+            if (await wordRepository.AddWordsToTopic(words, id, ct))
             {
-                if (await wordRepository.AddWordsToTopic(words, id))
-                {
-                    logger.LogInformation("The words : {0} were added ", words.Count);
-                    return Ok(true);
-                }
-                else
-                {
-                    logger.LogInformation("The word : {0} weren't added ", words.Count);
-                    return BadRequest();
-                }
+                logger.LogInformation("The words : {WordsCount} were added ", words.Count);
+                return Ok(true);
             }
-            catch
+            else
             {
-                logger.LogError("Something went wrong whe the service tried to add words to topic with {0} id ", id);
-                return BadRequest();
+                logger.LogWarning("The word : {WordsCount} weren't added ", words.Count);
+                return Conflict();
             }
         }
 
         [HttpDelete("DeleteWordFromTopic")]
-        public async Task<ActionResult<bool>> DeleteWord(Word word)
+        public async Task<ActionResult<bool>> DeleteWord(Word word, CancellationToken ct)
         {
-            try
+            if (await wordRepository.DeleteWordFromTopic(word.TopicId, word.Id, ct))
             {
-                if (await wordRepository.DeleteWordFromTopic(word))
-                {
-                    logger.LogInformation("The word {0} was deleted", word.RussianVersion.ToUpper());
-                    return Ok(true);
-                }
-                else
-                {
-                    logger.LogInformation("The word {0} wasn't deleted", word.RussianVersion.ToUpper());
-                    return BadRequest();
-                }
+                logger.LogInformation("The word {Word} was deleted", word.RussianVersion.ToUpper());
+                return Ok(true);
             }
-            catch
+            else
             {
-                logger.LogError("Something went wrong whe the service tried to delete word {0} from the topic with {1} id",
-                    word.RussianVersion.ToUpper(), word.TopicId);
-                return BadRequest();
+                logger.LogWarning("The word {Word} wasn't deleted", word.RussianVersion.ToUpper());
+                return NotFound();
             }
         }
     }

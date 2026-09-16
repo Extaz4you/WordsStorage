@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System.Reflection.Metadata.Ecma335;
 using WordsStorage.Database;
 using WordsStorage.Models;
 
@@ -13,49 +12,35 @@ public class TopicRepository
         StorageContext = storage;
     }
 
-    public async Task<List<Topic>> GetAllTopics()
+    public async Task<List<Topic>> GetAllTopics(CancellationToken ct)
     {
-        return await StorageContext.Topics.ToListAsync();
+        return await StorageContext.Topics.AsNoTracking().ToListAsync(ct);
     }
-    public async Task<Topic> GetTopic(int id)
+    public async Task<Topic?> GetTopic(int id, CancellationToken ct)
     {
-        return await StorageContext.Topics.FirstOrDefaultAsync(x => x.Id == id) ?? new Topic();
+        return await StorageContext.Topics.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
     }
-    public async Task<bool> AddTopic(Topic topic)
+    public async Task<bool> AddTopic(Topic topic, CancellationToken ct)
     {
-        try
+        var result = await StorageContext.Topics.FirstOrDefaultAsync(x => x.TopicName == topic.TopicName, ct);
+        if (result == null)
         {
-            var result = await StorageContext.Topics.FirstOrDefaultAsync(x => x.TopicName == topic.TopicName);
-            if(result == null)
-            {
-                topic.Words = new();
-                await StorageContext.AddAsync(topic);
-                await StorageContext.SaveChangesAsync();
-                return true;
-            }
-            return false;
+            topic.Words = new();
+            await StorageContext.AddAsync(topic, ct);
+            await StorageContext.SaveChangesAsync(ct);
+            return true;
         }
-        catch
-        {
-            return false;
-        }
+        return false;
     }
-    public async Task<bool> DeleteTopic(int id)
+    public async Task<bool> DeleteTopic(int id, CancellationToken ct)
     {
-        try
+        var result = await StorageContext.Topics.FirstOrDefaultAsync(x => x.Id == id, ct);
+        if (result != null)
         {
-            var result = await StorageContext.Topics.FirstOrDefaultAsync(x=>x.Id == id);
-            if(result != null)
-            {
-                StorageContext.Topics.Remove(result);
-                await StorageContext.SaveChangesAsync();
-                return true;
-            }
-            return false;
+            StorageContext.Topics.Remove(result);
+            await StorageContext.SaveChangesAsync(ct);
+            return true;
         }
-        catch
-        {
-            return false;
-        }
+        return false;
     }
 }

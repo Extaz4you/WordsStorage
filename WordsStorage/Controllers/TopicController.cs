@@ -18,80 +18,56 @@ public class TopicController : ControllerBase
     }
 
     [HttpGet("GetAll")]
-    public async Task<ActionResult<IEnumerable<Topic>>> GetAllTopics()
+    public async Task<ActionResult<IEnumerable<Topic>>> GetAllTopics(CancellationToken ct)
     {
-        var fulllist = await topicRepository.GetAllTopics();
-        logger.LogInformation("Service received : {0} topics", fulllist.Count);
+        var fulllist = await topicRepository.GetAllTopics(ct);
+        logger.LogInformation("Service received : {TopicsCount} topics", fulllist.Count);
         return Ok(fulllist);
     }
 
     [HttpGet("Get")]
-    public async Task<ActionResult> GetTopic(int id)
+    public async Task<ActionResult> GetTopic(int id, CancellationToken ct)
     {
-        try
+        var topic = await topicRepository.GetTopic(id, ct);
+        if (topic != null)
         {
-            var topic = await topicRepository.GetTopic(id);
-            if(topic != null)
-            {
-                logger.LogInformation("Topic was gotten {0} id", id);
-                return Ok(topic);
-            }
-            else
-            {
-                logger.LogWarning("Topic wasn't gotten {0} id", id);
-                return BadRequest();
-            }
+            logger.LogInformation("Topic was gotten {TopicId} id", id);
+            return Ok(topic);
         }
-        catch
+        else
         {
-            logger.LogError("Something went wrong when service was trying to get a topic with {0} id", id);
-            return BadRequest();
+            logger.LogWarning("Topic wasn't gotten {TopicId} id", id);
+            return NotFound();
         }
     }
 
     [HttpPost("Add")]
-    public async Task<ActionResult<bool>> AddTopic(Topic topic)
+    public async Task<ActionResult<bool>> AddTopic(Topic topic, CancellationToken ct)
     {
-        try
+        if (await topicRepository.AddTopic(topic, ct))
         {
-            if(await topicRepository.AddTopic(topic))
-            {
-                logger.LogInformation("The topic was added with {0} id ", topic.Id);
-                return Ok(true);
-            }
-            else
-            {
-                logger.LogWarning("The topic wasn't added with {0} id ", topic.Id);
-                return BadRequest();
-            }
+            logger.LogInformation("The topic was added with {TopicId} id ", topic.Id);
+            return Ok(true);
         }
-        catch 
+        else
         {
-            logger.LogError("Something went wrong when service was trying to add a topic with {0} id", topic.Id);
-            return BadRequest();
+            logger.LogWarning("The topic wasn't added with {TopicId} id ", topic.Id);
+            return Conflict();
         }
     }
 
     [HttpDelete("Delete")]
-    public async Task<ActionResult<bool>> DeleteTopic(int id)
+    public async Task<ActionResult<bool>> DeleteTopic(int id, CancellationToken ct)
     {
-        try
+        if (await topicRepository.DeleteTopic(id, ct))
         {
-            if (await topicRepository.DeleteTopic(id))
-            {
-                logger.LogInformation("The topic was deleted with {0} id ", id);
-                return Ok(true);
-            }
-            else
-            {
-                logger.LogWarning("The topic wasn't deleted with {0} id ", id);
-                return NotFound();
-            }
+            logger.LogInformation("The topic was deleted with {TopicId} id ", id);
+            return Ok(true);
         }
-        catch 
+        else
         {
-            logger.LogError("Something went wrong when service was trying to delete a topic with {0} id", id);
-            return BadRequest();
+            logger.LogWarning("The topic wasn't deleted with {TopicId} id ", id);
+            return NotFound();
         }
     }
 }

@@ -1,6 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System.Reflection.Metadata.Ecma335;
-using System.Security.Cryptography.Xml;
 using WordsStorage.Database;
 using WordsStorage.Models;
 
@@ -14,37 +12,38 @@ public class WordRepository
         storageContext = storage;
     }
 
-    public async Task<List<Word>> GetWordsFromTopic(int id)
+    public async Task<List<Word>?> GetWordsFromTopic(int id, CancellationToken ct)
     {
         var topic = await storageContext.Topics
+            .AsNoTracking()
             .Include(x => x.Words)
-            .FirstOrDefaultAsync(x => x.Id == id);
+            .FirstOrDefaultAsync(x => x.Id == id, ct);
 
-        if (topic == null) return new List<Word>();
-        return topic.Words ?? new List<Word>();
+        return topic?.Words; 
     }
 
-    public async Task<Word> GetWordFromTopic(string word)
+    public async Task<Word?> GetWordFromTopic(string wordNeeded, CancellationToken ct)
     {
-        var topic = await storageContext.Topics.SelectMany(x=>x.Words)
-                                               .FirstOrDefaultAsync(r=>r.EnglishVersion == word || r.RussianVersion == word);
-        if (topic == null) return new();
-        return topic;
+        var word = await storageContext.Topics.AsNoTracking()
+                                               .SelectMany(x=>x.Words)
+                                               .FirstOrDefaultAsync(r=>r.EnglishVersion == wordNeeded || r.RussianVersion == wordNeeded, ct);
+        if (word == null) return null;
+        return word;
   
     }
 
-    public async Task<bool> AddWordToTopic(Word word)
+    public async Task<bool> AddWordToTopic(Word word, CancellationToken ct)
     {
-        var topic = await storageContext.Topics.FirstOrDefaultAsync(x=>x.Id == word.TopicId);
+        var topic = await storageContext.Topics.FirstOrDefaultAsync(x=>x.Id == word.TopicId,ct);
         if(topic == null || topic.Words == null) return false;
         topic.Words.Add(word);
-        await storageContext.SaveChangesAsync();
+        await storageContext.SaveChangesAsync(ct);
         return true;
     }
 
-    public async Task<bool> AddWordsToTopic(List<Word> words, int topicId)
+    public async Task<bool> AddWordsToTopic(List<Word> words, int topicId, CancellationToken ct)
     {
-        var topic = await storageContext.Topics.FirstOrDefaultAsync(x => x.Id == topicId);
+        var topic = await storageContext.Topics.FirstOrDefaultAsync(x => x.Id == topicId,ct);
         if (topic == null || topic.Words == null) return false;
 
         foreach (var word in words)
@@ -53,16 +52,16 @@ public class WordRepository
         }
 
         topic.Words.AddRange(words);
-        await storageContext.SaveChangesAsync();
+        await storageContext.SaveChangesAsync(ct);
         return true;
     }
 
-    public async Task<bool> DeleteWordFromTopic(Word word)
+    public async Task<bool> DeleteWordFromTopic(int TopicId, int WordId, CancellationToken ct)
     {
-        var topic = await storageContext.Topics.FirstOrDefaultAsync(x => x.Id == word.TopicId);
-        if (topic == null) return false;
-        topic.Words.Remove(word);
-        await storageContext.SaveChangesAsync();
+        var word = storageContext.Words.FirstOrDefault(x => x.Id == WordId);
+        if (word == null) return false;
+        storageContext.Words.Remove(word);
+        await storageContext.SaveChangesAsync(ct);
         return true;
     }
 }
