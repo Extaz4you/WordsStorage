@@ -1,0 +1,6 @@
+@Repeater_HostAddress = http://localhost:5092
+
+GET {{Repeater_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

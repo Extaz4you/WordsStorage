@@ -2,4 +2,7 @@
   <Folder Name="/WordsStorage.Core/">
     <Project Path="WordsStorage/WordsStorage.csproj" />
   </Folder>
+  <Folder Name="/WordStorage.Repeater/">
+    <Project Path="Repeater/Repeater.csproj" Id="cf512170-b86e-4a6b-a10a-9c8ae79da91b" />
+  </Folder>
 </Solution>
