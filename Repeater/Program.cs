@@ -15,6 +15,10 @@ namespace Repeater
             {
                 o.BaseAddress = new Uri("http://192.168.200.54:7511/Topic/");
             });
+            builder.Services.AddHttpClient<WordService>(o =>
+            {
+                o.BaseAddress = new Uri("http://192.168.200.54:7511/Word/");
+            });
 
             var app = builder.Build();
 
